@@ -1,87 +1,55 @@
-const cells = document.querySelectorAll('.cell');
-const statusEl = document.getElementById('status');
-const restartBtn = document.getElementById('restart-btn');
-const resetBtn = document.getElementById('reset-btn');
-const xScoreEl = document.getElementById('x-score');
-const oScoreEl = document.getElementById('o-score');
-const drawScoreEl = document.getElementById('draw-score');
 
-const WIN_COMBOS = [
-  [0,1,2],[3,4,5],[6,7,8], // rows
-  [0,3,6],[1,4,7],[2,5,8], // cols
-  [0,4,8],[2,4,6]          // diags
+const board = document.querySelector('.board');
+const output = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8], 
+    [0, 4, 8], [2, 4, 6]
 ];
 
-let board = Array(9).fill('');
-let currentPlayer = 'X';
-let gameOver = false;
-let scores = { X: 0, O: 0, D: 0 };
+let arr = new Array(9).fill("E");
+let input = "O";
+let count = 0;
 
-function setStatus(msg, cls = '') {
-  statusEl.textContent = msg;
-  statusEl.className = 'status ' + cls;
-}
-
-function checkWinner() {
-  for (const [a, b, c] of WIN_COMBOS) {
-    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-      return { winner: board[a], combo: [a, b, c] };
+function checkResult() {
+    for (let [index1, index2, index3] of output) {
+        if (arr[index1] !== "E" && arr[index1] === arr[index2] && arr[index1] === arr[index3]) {
+            return arr[index1]; // Return winner symbol
+        }
     }
-  }
-  if (board.every(cell => cell !== '')) return { winner: 'Draw', combo: [] };
-  return null;
+    return null;
 }
 
-function handleClick(e) {
-  const idx = +e.target.dataset.index;
-  if (gameOver || board[idx]) return;
+function boardResult(event) {
+    let id = event.target.id;
+    if (arr[id] !== "E") return;
 
-  board[idx] = currentPlayer;
-  const cell = cells[idx];
-  cell.textContent = currentPlayer;
-  cell.classList.add(currentPlayer.toLowerCase(), 'taken');
+    count++;
+    arr[id] = input;
+    event.target.innerHTML = input;
 
-  const result = checkWinner();
-  if (result) {
-    gameOver = true;
-    if (result.winner === 'Draw') {
-      scores.D++;
-      drawScoreEl.textContent = scores.D;
-      setStatus("It's a Draw!", 'draw');
+    let winner = checkResult();
+    let resultDisplay = document.querySelector('#resultIs');
+
+    if (winner) {
+        resultDisplay.innerHTML = `Winner is ${winner}`;
+        board.classList.add('disabled');
+        return;
+    }
+
+    if (count === arr.length) {
+        resultDisplay.innerHTML = "Match is Draw";
     } else {
-      scores[result.winner]++;
-      (result.winner === 'X' ? xScoreEl : oScoreEl).textContent = scores[result.winner];
-      result.combo.forEach(i => cells[i].classList.add('win-cell'));
-      setStatus(`Player ${result.winner} Wins! 🎉`, 'win');
+        input = (input === "O") ? "X" : "O";
     }
-    return;
-  }
-
-  currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-  setStatus(`Player ${currentPlayer}'s Turn`, currentPlayer === 'X' ? 'x-turn' : 'o-turn');
 }
 
-function restartGame() {
-  board = Array(9).fill('');
-  currentPlayer = 'X';
-  gameOver = false;
-  cells.forEach(cell => {
-    cell.textContent = '';
-    cell.className = 'cell';
-  });
-  setStatus("Player X's Turn", 'x-turn');
-}
+board.addEventListener('click', boardResult);
 
-function resetScores() {
-  scores = { X: 0, O: 0, D: 0 };
-  xScoreEl.textContent = 0;
-  oScoreEl.textContent = 0;
-  drawScoreEl.textContent = 0;
-  restartGame();
-}
-
-cells.forEach(cell => cell.addEventListener('click', handleClick));
-restartBtn.addEventListener('click', restartGame);
-resetBtn.addEventListener('click', resetScores);
-
-setStatus("Player X's Turn", 'x-turn');
+document.querySelector("#restart").addEventListener('click', () => {
+    arr.fill("E");
+    document.querySelectorAll('.cell').forEach(cell => cell.innerHTML = "");
+    input = "O";
+    count = 0;
+    document.querySelector('#resultIs').innerHTML = "";
+    board.classList.remove('disabled'); // Enable board again
+});
